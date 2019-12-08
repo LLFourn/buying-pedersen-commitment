@@ -1,0 +1,84 @@
+\documentclass{article}
+\addtolength{\oddsidemargin}{-.875in}
+\addtolength{\evensidemargin}{-.875in}
+\addtolength{\textwidth}{1.75in}
+\addtolength{\topmargin}{-.875in}
+\addtolength{\textheight}{1.75in}
+
+\usepackage{mdframed}
+\usepackage[utf8]{inputenc}
+\usepackage[n,advantage,operators,sets,adversary,landau,probability,notions,logic,ff, mm, primitives,events,complexity,asymptotics,keys]{cryptocode}
+\usepackage{caption}
+
+\title{Note on Paying for a Pedersen Commitment Opening}
+\author{Lloyd Fournier (lloyd.fourn@gmail.com)}
+\date{December 2019}
+
+\newcommand{\Pdleq}{\pcalgostyle{P}_{\textsf{DLEQ}}}
+\newcommand{\Vdleq}{\pcalgostyle{V}_{\textsf{DLEQ}}}
+\captionsetup[figure]{labelfont={bf},name={Fig.},labelsep=period}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Creating The Access Structure}
+
+In this short note we demonstrate how a to securely sell an opening $(r,x)$ to a Pedersen Commitment $C = rG + xH$ on Bitcoin. The protocol begins with the seller publishing a simple discrete log access structure for the opening. If the buyer is able to learn the discrete logarithms of two points ($A$ and $B$ below) the they will be able to decrypt the opening.
+
+\begin{figure}[h]
+  \centering
+  \begin{mdframed}
+    \begin{center}
+ \pseudocode{
+   \textbf{Seller}(r,x) \< \< \textbf{Buyer} \\[0.1 \baselineskip][\hline]\\
+     (a,b) \sample \ZZ_q \\
+     A \gets aG; B \gets bG; B' \gets bH \\
+     \alpha \gets r + a; \beta \gets x + b \\
+     \pi \gets \Pdleq((G,B),(H,B'), b) \\
+     \< \sendmessageright*{\alpha, \beta, A, B, B', \pi} \< \\
+     \< \< \Vdleq((G,B), (H,B'), \pi) \stackrel{?}{=} 1\\
+     \< \< C + A + B' \stackrel{?}{=} \alpha G + \beta H \\
+     \pcreturn ((a,A),(b,B)) \< \< \pcreturn (A,B, \alpha, \beta)
+   }
+   \end{center}
+ \end{mdframed}
+ \caption{The access structure setup protocol. $(\Pdleq, \Vdleq)$ denote the non-interactive proving and verification algorithms for discrete logarithm equality \cite{chaum1983blind}}
+\end{figure}
+
+\subsection{Security}
+
+Correctness follows from the fact that $C = rG + xH  = \alpha G + \beta H - A - B'$. If the buyer learns $a$ and $b$ such that $A = aG$ and $B = bG$, then $(r = \alpha - a, x = \beta - b)$ must be a valid opening for $C$ (if the proof $\pi$ is sound). We must also ensure that the buyer learns nothing about the opening until they learn $a$ and $b$. This follows from the fact that a valid looking tuple $(\alpha, \beta, A, B, B', \pi)$ is \emph{simulatable} i.e. it can be produced without knowledge of the opening of $C$: choose $b, \alpha, \beta$ as normal and then set $A \gets \alpha{}G + \beta{}H - B' - C$.
+
+\section{Purchasing the dicrete logaritihms}
+
+\newcommand{\I}{\mathbf{I}}
+\renewcommand{\i}{\mathbf{i}}
+\newcommand{\addr}{\texttt{addr}}
+\newcommand{\Tx}{\textsf{Tx}}
+\newcommand{\Fund}{\textsf{Fund}}
+\newcommand{\Refund}{\textsf{Refund}}
+\newcommand{\Redeem}{\textsf{Redeem}}
+
+The buyer with $(A,B,\alpha,\beta)$, can generate a valid opening for $C$ given ($a$,$b$), the discrete logarithms of $(A,B)$. Thus, the buyer now attempts to purchase $(a,b)$ from the seller. In case, the seller does not know $(a,b)$ the buyer must have their money returned. Thus they construct the following transaction scaffold
+
+\begin{enumerate}
+\item \Fund: Spends from the buyers inputs with two outputs whose value adds up to $v$.
+\item \Redeem: Spends the two outputs of $\Fund$ to the seller's address
+\item \Refund: Spends the two outputs of $\Fund$ to the buyer's address (time-locked)
+\end{enumerate}
+
+To complete the scaffold they define transitions between transactions in the scaffold by exchanging signatures on the $\Redeem$ and $\Refund$ transactions as follows:
+
+\begin{enumerate}
+\item They jointly sign both inputs of the $\Refund$ transaction such that the buyer has a valid witness for it.
+\item They jointly produce two one-time encrypted signatures on the inputs for $\Redeem$ encrypted by $A$ and $B$ respectively.
+\end{enumerate}
+
+This completes the scaffold. If the buyer wants to go through with the purchase they sign and broadcast the $\Fund$ transaction. Then, if the seller wants to go through with the sale they decrypt both one-time encrypted signatures on the $\Redeem$'s inputs with $(a,b)$ and broadcast $\Redeem$. From the one-timeness of the encryptions the buyer learns ($a$,$b$) and can therefore recover $r \gets \alpha - a$ and $x \gets \beta - b$.
+
+\bibliography{bib.bib}{}
+\bibliographystyle{unsrt}
+
+\end{document}
