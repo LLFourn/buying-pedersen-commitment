@@ -49,7 +49,10 @@ In this short note we demonstrate how a to securely sell an opening $(r,x)$ to a
 
 \subsection{Security}
 
-Correctness follows from the fact that $C = rG + xH  = \alpha G + \beta H - A - B'$. If the buyer learns $a$ and $b$ such that $A = aG$ and $B = bG$, then $(r = \alpha - a, x = \beta - b)$ must be a valid opening for $C$ (if the proof $\pi$ is sound). We must also ensure that the buyer learns nothing about the opening until they learn $a$ and $b$. This follows from the fact that a valid looking tuple $(\alpha, \beta, A, B, B', \pi)$ is \emph{simulatable} i.e. it can be produced without knowledge of the opening of $C$: choose $b, \alpha, \beta$ as normal and then set $A \gets \alpha{}G + \beta{}H - B' - C$.
+Correctness follows from the fact that $C = rG + xH  = \alpha G + \beta H - A - B'$.
+If the buyer learns $a$ and $b$ such that $A = aG$ and $B = bG$, then $(r = \alpha - a, x = \beta - b)$ must be a valid opening for $C$ (if the proof $\pi$ is sound).
+We must also ensure that the buyer learns nothing about the opening until they learn $a$ and $b$.
+This follows from the fact that a valid looking tuple $(\alpha, \beta, A, B, B', \pi)$ is \emph{simulatable} i.e. it can be produced without knowledge of the opening of $C$: choose $b, \alpha, \beta$ as normal and then set $A \gets \alpha{}G + \beta{}H - B' - C$.
 
 \section{Purchasing the dicrete logaritihms}
 
@@ -73,7 +76,7 @@ To complete the scaffold they define transitions between transactions in the sca
 
 \begin{enumerate}
 \item They jointly sign both inputs of the $\Refund$ transaction such that the buyer has a valid witness for it.
-\item They jointly produce two one-time encrypted signatures on the inputs for $\Redeem$ encrypted by $A$ and $B$ respectively.
+\item They jointly produce two one-time encrypted signatures \cite{onetimeves} on the inputs for $\Redeem$ encrypted by $A$ and $B$ respectively.
 \end{enumerate}
 
 This completes the scaffold. If the buyer wants to go through with the purchase they sign and broadcast the $\Fund$ transaction. Then, if the seller wants to go through with the sale they decrypt both one-time encrypted signatures on the $\Redeem$'s inputs with $(a,b)$ and broadcast $\Redeem$. From the one-timeness of the encryptions the buyer learns ($a$,$b$) and can therefore recover $r \gets \alpha - a$ and $x \gets \beta - b$.
